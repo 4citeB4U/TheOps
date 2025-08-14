@@ -175,31 +175,443 @@ class VoiceOrchestrator {
 
   private _updatePreferredVoice() {
     const voices = window.speechSynthesis.getVoices();
-     if (voices.length > 0) {
-      const preferredVoiceURI = localStorage.getItem('lex_voice_preference');
-      if (preferredVoiceURI) {
-          this.preferredVoice = voices.find(v => v.voiceURI === preferredVoiceURI) || null;
-      }
+    if (voices.length === 0) return;
 
-      if (!this.preferredVoice) {
-          let selectedVoice = voices.find(voice => voice.name === "Microsoft Andrew Online (Natural) - English (United States)" && voice.lang === this.lang);
-          if (!selectedVoice) selectedVoice = voices.find(voice => voice.lang === this.lang && voice.name.includes('Google'));
-          if (!selectedVoice) selectedVoice = voices.find(voice => voice.lang === this.lang && voice.name.includes('David'));
-          if (!selectedVoice) selectedVoice = voices.find(voice => voice.lang === this.lang);
-          this.preferredVoice = selectedVoice || null;
-      }
+    // Detect platform and browser for optimal voice selection
+    const platform = this.detectPlatform();
+    const browser = this.detectBrowser();
+    
+    console.log(`Platform: ${platform}, Browser: ${browser}`);
+    console.log(`Available voices: ${voices.length}`);
+
+    // Score and rank all available voices
+    const scoredVoices = voices.map(voice => ({
+      voice,
+      score: this.scoreVoiceQuality(voice, platform, browser)
+    })).sort((a, b) => b.score - a.score);
+
+    // Log top 5 voices for debugging
+    console.log('Top 5 voices by quality score:');
+    scoredVoices.slice(0, 5).forEach((scored, index) => {
+      console.log(`${index + 1}. ${scored.voice.name} (${scored.voice.voiceURI}) - Score: ${scored.score}`);
+    });
+
+    // Special logging for Apple devices
+    if (this.isAppleDevice()) {
+      console.log('🍎 Apple device detected - prioritizing premium voices');
+      const appleVoices = scoredVoices.filter(scored => 
+        scored.voice.name.includes('Siri') || 
+        scored.voice.name.includes('Enhanced') || 
+        scored.voice.name.includes('Premium') ||
+        scored.voice.name.includes('Neural') ||
+        ['Alex', 'Samantha', 'Daniel', 'Karen', 'Victoria', 'Tom', 'Fred', 'Ralph', 'Nicky', 'Susan', 'Aaron', 'Bella', 'Martha', 'Gordon'].some(name => scored.voice.name.includes(name))
+      );
       
-      if(this.preferredVoice) {
-          console.log(`Preferred voice for lang ${this.lang} set: ${this.preferredVoice.name}`);
+      if (appleVoices.length > 0) {
+        console.log('🍎 Premium Apple voices found:');
+        appleVoices.slice(0, 3).forEach((scored, index) => {
+          console.log(`  ${index + 1}. ${scored.voice.name} - Score: ${scored.score}`);
+        });
       } else {
-          console.warn(`Could not find a suitable voice for ${this.lang}. The assistant will use the system's default voice.`);
+        console.log('⚠️ No premium Apple voices detected. This may indicate a voice loading issue.');
       }
     }
+
+    // Try to use saved preference first
+    const savedVoiceURI = localStorage.getItem('lex_voice_preference');
+    if (savedVoiceURI) {
+      const savedVoice = voices.find(v => v.voiceURI === savedVoiceURI);
+      if (savedVoice && this.scoreVoiceQuality(savedVoice, platform, browser) > 50) {
+        this.preferredVoice = savedVoice;
+        console.log(`Using saved voice preference: ${savedVoice.name}`);
+        return;
+      }
+    }
+
+    // Select the best available voice
+    const bestVoice = scoredVoices[0];
+    
+    // Special handling for Apple devices - always try to get the best Apple voice
+    if (this.isAppleDevice() && this.isSafari()) {
+      // Look specifically for Apple's premium voices
+      const appleVoice = scoredVoices.find(scored => 
+        scored.voice.name.includes('Siri') || 
+        scored.voice.name.includes('Enhanced') || 
+        scored.voice.name.includes('Premium') ||
+        scored.voice.name.includes('Neural') ||
+        ['Alex', 'Samantha', 'Daniel', 'Karen', 'Victoria', 'Tom', 'Fred', 'Ralph', 'Nicky', 'Susan', 'Aaron', 'Bella', 'Martha', 'Gordon'].some(name => scored.voice.name.includes(name))
+      );
+      
+      if (appleVoice && appleVoice.score > 50) {
+        this.preferredVoice = appleVoice.voice;
+        localStorage.setItem('lex_voice_preference', appleVoice.voice.voiceURI);
+        console.log(`🎯 Selected premium Apple voice: ${appleVoice.voice.name} (Score: ${appleVoice.score})`);
+        return;
+      }
+    }
+    
+    if (bestVoice && bestVoice.score > 30) {
+      this.preferredVoice = bestVoice.voice;
+      localStorage.setItem('lex_voice_preference', bestVoice.voice.voiceURI);
+      console.log(`Selected best available voice: ${bestVoice.voice.name} (Score: ${bestVoice.score})`);
+    } else {
+      // Fallback to any available voice
+      this.preferredVoice = voices[0];
+      console.warn(`No high-quality voices found, using fallback: ${voices[0].name}`);
+    }
+  }
+
+  private detectPlatform(): 'android' | 'ios' | 'windows' | 'macos' | 'linux' | 'unknown' {
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    if (/android/.test(userAgent)) return 'android';
+    if (/iphone|ipad|ipod/.test(userAgent)) return 'ios';
+    if (/macintosh|mac os x/.test(userAgent)) return 'macos';
+    if (/windows/.test(userAgent)) return 'windows';
+    if (/linux/.test(userAgent)) return 'linux';
+    
+    return 'unknown';
+  }
+
+  private isAppleDevice(): boolean {
+    const platform = this.detectPlatform();
+    return platform === 'ios' || platform === 'macos';
+  }
+
+  private isSafari(): boolean {
+    return this.detectBrowser() === 'safari';
+  }
+
+  private detectBrowser(): 'chrome' | 'safari' | 'edge' | 'firefox' | 'unknown' {
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    if (/edg/.test(userAgent)) return 'edge';
+    if (/chrome/.test(userAgent) && !/edg/.test(userAgent)) return 'chrome';
+    if (/safari/.test(userAgent) && !/chrome/.test(userAgent)) return 'safari';
+    if (/firefox/.test(userAgent)) return 'firefox';
+    
+    return 'unknown';
+  }
+
+  private scoreVoiceQuality(voice: SpeechSynthesisVoice, platform: string, browser: string): number {
+    let score = 0;
+    
+    // Base score for language match
+    if (voice.lang.startsWith(this.lang)) {
+      score += 20;
+    } else if (voice.lang.startsWith('en')) {
+      score += 15;
+    }
+
+    // Platform-specific scoring
+    switch (platform) {
+      case 'android':
+        score += this.scoreAndroidVoice(voice, browser);
+        break;
+      case 'ios':
+        score += this.scoreIOSVoice(voice, browser);
+        break;
+      case 'windows':
+        score += this.scoreWindowsVoice(voice, browser);
+        break;
+      case 'macos':
+        score += this.scoreMacOSVoice(voice, browser);
+        break;
+    }
+
+    // Browser-specific scoring
+    score += this.scoreBrowserVoice(voice, browser);
+
+    // Voice quality indicators
+    if (voice.localService) score += 10; // Local voices are usually better
+    if (voice.default) score += 5; // Default voices are often good
+    
+    // Natural voice detection
+    if (this.isNaturalVoice(voice)) score += 25;
+    
+    // Premium voice detection
+    if (this.isPremiumVoice(voice)) score += 20;
+
+    return score;
+  }
+
+  private scoreAndroidVoice(voice: SpeechSynthesisVoice, browser: string): number {
+    let score = 0;
+    
+    // Android has excellent Google voices
+    if (voice.name.includes('Google')) {
+      score += 30;
+      if (voice.name.includes('Natural')) score += 20;
+      if (voice.name.includes('Enhanced')) score += 15;
+    }
+    
+    // Samsung voices are also good
+    if (voice.name.includes('Samsung')) score += 25;
+    
+    // Microsoft voices on Android
+    if (voice.name.includes('Microsoft')) score += 20;
+    
+    return score;
+  }
+
+  private scoreIOSVoice(voice: SpeechSynthesisVoice, browser: string): number {
+    let score = 0;
+    
+    // Apple's premium Siri voices are the best available
+    if (voice.name.includes('Siri')) {
+      score += 50; // Highest priority for Siri voices
+      if (voice.name.includes('Enhanced')) score += 30;
+      if (voice.name.includes('Premium')) score += 25;
+      if (voice.name.includes('Neural')) score += 35;
+    }
+    
+    // Apple's Enhanced voices (very high quality)
+    if (voice.name.includes('Enhanced')) {
+      score += 45;
+      if (voice.name.includes('Premium')) score += 20;
+    }
+    
+    // Apple's Premium voices
+    if (voice.name.includes('Premium')) score += 40;
+    
+    // Apple's Neural voices
+    if (voice.name.includes('Neural')) score += 45;
+    
+    // Apple's classic high-quality system voices
+    if (voice.name.includes('Alex') || voice.name.includes('Samantha')) score += 40;
+    if (voice.name.includes('Daniel') || voice.name.includes('Karen')) score += 40;
+    if (voice.name.includes('Victoria') || voice.name.includes('Tom')) score += 40;
+    if (voice.name.includes('Fred') || voice.name.includes('Ralph')) score += 40;
+    
+    // Apple's newer high-quality voices
+    if (voice.name.includes('Nicky') || voice.name.includes('Susan')) score += 40;
+    if (voice.name.includes('Aaron') || voice.name.includes('Bella')) score += 40;
+    if (voice.name.includes('Martha') || voice.name.includes('Gordon')) score += 40;
+    
+    // Apple's international voices (often very high quality)
+    if (voice.name.includes('Tessa') || voice.name.includes('Moira')) score += 35;
+    if (voice.name.includes('Fiona') || voice.name.includes('Alice')) score += 35;
+    
+    // Safari-specific voice detection
+    if (browser === 'safari') {
+      score += 15; // Safari has better access to Apple voices
+      if (voice.localService) score += 20; // Local Apple voices are premium
+    }
+    
+    return score;
+  }
+
+  private scoreWindowsVoice(voice: SpeechSynthesisVoice, browser: string): number {
+    let score = 0;
+    
+    // Windows has excellent Microsoft voices
+    if (voice.name.includes('Microsoft')) {
+      score += 30;
+      if (voice.name.includes('Online')) score += 20;
+      if (voice.name.includes('Natural')) score += 25;
+      if (voice.name.includes('Neural')) score += 30;
+    }
+    
+    // Windows system voices
+    if (voice.name.includes('David') || voice.name.includes('Zira')) score += 20;
+    
+    return score;
+  }
+
+  private scoreMacOSVoice(voice: SpeechSynthesisVoice, browser: string): number {
+    let score = 0;
+    
+    // macOS has the best voice quality available
+    if (voice.name.includes('Siri')) {
+      score += 50; // Siri voices on macOS are premium
+      if (voice.name.includes('Enhanced')) score += 30;
+      if (voice.name.includes('Premium')) score += 25;
+      if (voice.name.includes('Neural')) score += 35;
+    }
+    
+    // macOS Enhanced voices (very high quality)
+    if (voice.name.includes('Enhanced')) {
+      score += 45;
+      if (voice.name.includes('Premium')) score += 20;
+    }
+    
+    // macOS Premium voices
+    if (voice.name.includes('Premium')) score += 40;
+    
+    // macOS Neural voices
+    if (voice.name.includes('Neural')) score += 45;
+    
+    // macOS classic high-quality system voices
+    if (voice.name.includes('Alex') || voice.name.includes('Samantha')) score += 40;
+    if (voice.name.includes('Daniel') || voice.name.includes('Karen')) score += 40;
+    if (voice.name.includes('Victoria') || voice.name.includes('Tom')) score += 40;
+    if (voice.name.includes('Fred') || voice.name.includes('Ralph')) score += 40;
+    
+    // macOS newer high-quality voices
+    if (voice.name.includes('Nicky') || voice.name.includes('Susan')) score += 40;
+    if (voice.name.includes('Aaron') || voice.name.includes('Bella')) score += 40;
+    if (voice.name.includes('Martha') || voice.name.includes('Gordon')) score += 40;
+    
+    // macOS international voices (often very high quality)
+    if (voice.name.includes('Tessa') || voice.name.includes('Moira')) score += 35;
+    if (voice.name.includes('Fiona') || voice.name.includes('Alice')) score += 35;
+    if (voice.name.includes('Yuri') || voice.name.includes('Kyoko')) score += 35;
+    
+    // Safari on macOS has the best voice access
+    if (browser === 'safari') {
+      score += 20; // Safari has superior access to macOS voices
+      if (voice.localService) score += 25; // Local macOS voices are premium
+    }
+    
+    return score;
+  }
+
+  private scoreBrowserVoice(voice: SpeechSynthesisVoice, browser: string): number {
+    let score = 0;
+    
+    switch (browser) {
+      case 'chrome':
+        // Chrome has access to system voices and Google voices
+        if (voice.name.includes('Google')) score += 25;
+        break;
+      case 'safari':
+        // Safari has superior access to system voices, especially on Apple devices
+        if (voice.localService) score += 25;
+        if (voice.name.includes('Siri') || voice.name.includes('Enhanced') || voice.name.includes('Premium')) score += 20;
+        if (voice.name.includes('Alex') || voice.name.includes('Samantha') || voice.name.includes('Daniel') || voice.name.includes('Karen')) score += 15;
+        break;
+      case 'edge':
+        // Edge has access to Microsoft voices
+        if (voice.name.includes('Microsoft')) score += 20;
+        break;
+      case 'firefox':
+        // Firefox has access to system voices
+        if (voice.localService) score += 15;
+        break;
+    }
+    
+    return score;
+  }
+
+  private isNaturalVoice(voice: SpeechSynthesisVoice): boolean {
+    const naturalIndicators = [
+      'natural', 'enhanced', 'premium', 'neural', 'ai', 'siri',
+      'google', 'microsoft', 'samsung', 'apple'
+    ];
+    
+    const voiceName = voice.name.toLowerCase();
+    const voiceURI = voice.voiceURI.toLowerCase();
+    
+    return naturalIndicators.some(indicator => 
+      voiceName.includes(indicator) || voiceURI.includes(indicator)
+    );
+  }
+
+  private isPremiumVoice(voice: SpeechSynthesisVoice): boolean {
+    const premiumIndicators = [
+      'premium', 'enhanced', 'natural', 'neural', 'ai', 'siri',
+      'online', 'cloud'
+    ];
+    
+    const voiceName = voice.name.toLowerCase();
+    const voiceURI = voice.voiceURI.toLowerCase();
+    
+    return premiumIndicators.some(indicator => 
+      voiceName.includes(indicator) || voiceURI.includes(indicator)
+    );
   }
   
   public reloadVoicePreference() {
     if (!window.speechSynthesis) return;
     this._updatePreferredVoice();
+  }
+
+  public refreshVoices() {
+    if (!window.speechSynthesis) return;
+    
+    // Force voice refresh on some browsers
+    if (window.speechSynthesis.onvoiceschanged) {
+      window.speechSynthesis.onvoiceschanged();
+    }
+    
+    // Wait a bit for voices to load, then update
+    setTimeout(() => {
+      this._updatePreferredVoice();
+    }, 100);
+  }
+
+  public forceAppleVoiceDiscovery() {
+    if (!this.isAppleDevice()) {
+      console.log('Not on Apple device, skipping Apple voice discovery');
+      return;
+    }
+    
+    console.log('🔍 Forcing Apple voice discovery...');
+    
+    // Force voice refresh multiple times to ensure all voices are loaded
+    if (window.speechSynthesis.onvoiceschanged) {
+      window.speechSynthesis.onvoiceschanged();
+    }
+    
+    // Multiple refresh attempts to catch all voices
+    setTimeout(() => {
+      if (window.speechSynthesis.onvoiceschanged) {
+        window.speechSynthesis.onvoiceschanged();
+      }
+    }, 200);
+    
+    setTimeout(() => {
+      if (window.speechSynthesis.onvoiceschanged) {
+        window.speechSynthesis.onvoiceschanged();
+      }
+      this._updatePreferredVoice();
+    }, 500);
+    
+    setTimeout(() => {
+      this._updatePreferredVoice();
+      console.log('✅ Apple voice discovery complete');
+    }, 1000);
+  }
+
+  public testVoice(text: string = "Hello, this is a test of the voice system. How does this sound?") {
+    if (!this.preferredVoice) {
+      this._updatePreferredVoice();
+    }
+    
+    if (this.preferredVoice) {
+      console.log(`Testing voice: ${this.preferredVoice.name}`);
+      this.speak(text);
+    } else {
+      console.warn('No voice available for testing');
+    }
+  }
+
+  public getVoiceInfo() {
+    const voices = window.speechSynthesis.getVoices();
+    const platform = this.detectPlatform();
+    const browser = this.detectBrowser();
+    
+    return {
+      platform,
+      browser,
+      totalVoices: voices.length,
+      currentVoice: this.preferredVoice ? {
+        name: this.preferredVoice.name,
+        voiceURI: this.preferredVoice.voiceURI,
+        lang: this.preferredVoice.lang,
+        localService: this.preferredVoice.localService,
+        default: this.preferredVoice.default,
+        qualityScore: this.scoreVoiceQuality(this.preferredVoice, platform, browser)
+      } : null,
+      availableVoices: voices.map(voice => ({
+        name: voice.name,
+        voiceURI: voice.voiceURI,
+        lang: voice.lang,
+        localService: voice.localService,
+        default: voice.default,
+        qualityScore: this.scoreVoiceQuality(voice, platform, browser)
+      })).sort((a, b) => b.qualityScore - a.qualityScore)
+    };
   }
 
   private initSpeechSynthesis() {
@@ -416,18 +828,51 @@ class VoiceOrchestrator {
     
     window.dispatchEvent(new CustomEvent('lex.ui.chat.show', { detail: { role: 'assistant', text } }));
 
+    // Ensure we have the best voice selected
+    if (!this.preferredVoice) {
+      this._updatePreferredVoice();
+    }
+
     const utterance = new SpeechSynthesisUtterance(sanitizedText);
     utterance.lang = this.lang;
-    utterance.rate = 0.9;
-    utterance.pitch = 0.8;
+    
+    // Optimize voice settings based on platform and voice quality
+    const platform = this.detectPlatform();
+    const voiceQuality = this.preferredVoice ? this.scoreVoiceQuality(this.preferredVoice, platform, this.detectBrowser()) : 0;
+    
+    // Adjust rate and pitch based on voice quality
+    if (voiceQuality > 70) {
+      // High-quality voice - use natural settings
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+    } else if (voiceQuality > 40) {
+      // Medium-quality voice - slight adjustments
+      utterance.rate = 0.9;
+      utterance.pitch = 0.9;
+      utterance.volume = 0.95;
+    } else {
+      // Lower-quality voice - more adjustments for clarity
+      utterance.rate = 0.85;
+      utterance.pitch = 0.8;
+      utterance.volume = 0.9;
+    }
     
     if (this.preferredVoice) {
         utterance.voice = this.preferredVoice;
+        console.log(`Speaking with voice: ${this.preferredVoice.name} (Quality: ${voiceQuality})`);
+    } else {
+        console.warn('No preferred voice set, using system default');
     }
 
     utterance.onstart = () => {
       this.dispatchPhaseChange('SPEAKING');
       window.dispatchEvent(new Event('lex.tts.start'));
+      
+      // Log voice performance metrics
+      if (this.preferredVoice) {
+        console.log(`Voice performance: ${this.preferredVoice.name} | Rate: ${utterance.rate} | Pitch: ${utterance.pitch} | Quality Score: ${voiceQuality}`);
+      }
     };
     
     utterance.onend = () => {
@@ -442,7 +887,11 @@ class VoiceOrchestrator {
     utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
       if (e.error !== 'interrupted') {
         console.error(`TTS Error: ${e.error}. For text: "${e.utterance.text.substring(0, 100)}..."`);
+        console.error(`Voice: ${this.preferredVoice?.name || 'Unknown'}, Platform: ${platform}`);
         window.dispatchEvent(new Event('lex.tts.error'));
+        
+        // Try to recover by updating voice preference
+        this._updatePreferredVoice();
       } else {
         console.log('TTS utterance was intentionally interrupted.');
       }

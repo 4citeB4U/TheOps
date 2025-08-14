@@ -269,15 +269,113 @@ const Garage: React.FC = () => {
                 </Card>
                 
                 <Card title="Voice Narration">
-                     <p className="text-slate-400 mb-4 text-sm">Select the system voice for read-aloud features.</p>
-                     <div className="flex gap-2">
-                        <select value={selectedVoice} onChange={handleVoiceChange} className="w-full bg-slate-700 rounded-md p-2 border border-slate-600 text-sm">
-                            <option value="">System Default</option>
-                            {voices.filter(v => v.lang.startsWith(formData.profile.language?.split('-')[0] || 'en')).map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>)}
-                        </select>
-                        <button onClick={testSelectedVoice} className="px-3 py-2 rounded-lg font-semibold bg-slate-600 hover:bg-slate-500 text-sm">Test</button>
+                     <p className="text-slate-400 mb-4 text-sm">Advanced voice settings for optimal speech quality across all platforms.</p>
+                     
+                     {/* Voice Quality Info */}
+                     <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                           <span className="text-sm font-medium text-slate-300">Current Voice Quality</span>
+                           <button onClick={() => voiceOrchestrator.refreshVoices()} className="text-xs bg-primary-blue px-2 py-1 rounded hover:bg-primary-blue/80">
+                              Refresh Voices
+                           </button>
+                        </div>
+                        <div className="text-xs text-slate-400 space-y-1">
+                           <div>Platform: <span className="text-slate-300">{voiceOrchestrator.getVoiceInfo().platform}</span></div>
+                           <div>Browser: <span className="text-slate-300">{voiceOrchestrator.getVoiceInfo().browser}</span></div>
+                           <div>Available Voices: <span className="text-slate-300">{voiceOrchestrator.getVoiceInfo().totalVoices}</span></div>
+                           {voiceOrchestrator.getVoiceInfo().currentVoice && (
+                              <div>Current: <span className="text-slate-300">{voiceOrchestrator.getVoiceInfo().currentVoice.name}</span> (Score: {voiceOrchestrator.getVoiceInfo().currentVoice.qualityScore})</div>
+                           )}
+                        </div>
                      </div>
-                      <div className="mt-4">
+
+                     {/* Voice Selection */}
+                     <div className="space-y-3">
+                        <div>
+                           <label className="block text-sm font-medium text-slate-400 mb-2">Voice Selection</label>
+                           <div className="flex gap-2">
+                              <select value={selectedVoice} onChange={handleVoiceChange} className="flex-1 bg-slate-700 rounded-md p-2 border border-slate-600 text-sm">
+                                 <option value="">Auto-Select Best Voice</option>
+                                 {voices.filter(v => v.lang.startsWith(formData.profile.language?.split('-')[0] || 'en'))
+                                    .sort((a, b) => {
+                                       const aScore = voiceOrchestrator.getVoiceInfo().availableVoices.find(v => v.voiceURI === a.voiceURI)?.qualityScore || 0;
+                                       const bScore = voiceOrchestrator.getVoiceInfo().availableVoices.find(v => v.voiceURI === b.voiceURI)?.qualityScore || 0;
+                                       return bScore - aScore;
+                                    })
+                                    .map(v => {
+                                       const voiceInfo = voiceOrchestrator.getVoiceInfo().availableVoices.find(vi => vi.voiceURI === v.voiceURI);
+                                       return (
+                                          <option key={v.voiceURI} value={v.voiceURI}>
+                                             {v.name} ({v.lang}) - Score: {voiceInfo?.qualityScore || 0}
+                                          </option>
+                                       );
+                                    })}
+                              </select>
+                              <button onClick={testSelectedVoice} className="px-3 py-2 rounded-lg font-semibold bg-slate-600 hover:bg-slate-500 text-sm">Test</button>
+                           </div>
+                        </div>
+
+                        {/* Voice Testing */}
+                        <div className="flex gap-2">
+                           <button onClick={() => voiceOrchestrator.testVoice()} className="flex-1 px-3 py-2 rounded-lg font-semibold bg-primary-blue hover:bg-primary-blue/80 text-sm">
+                              Test Current Voice
+                           </button>
+                           <button onClick={() => voiceOrchestrator.testVoice("This is a test of the enhanced voice system. The voice should sound much more natural now.")} className="flex-1 px-3 py-2 rounded-lg font-semibold bg-accent-fuchsia hover:bg-accent-fuchsia/80 text-sm">
+                              Test Natural Speech
+                           </button>
+                        </div>
+
+                        {/* Apple Premium Voice Test */}
+                        {(voiceOrchestrator.getVoiceInfo().platform === 'ios' || voiceOrchestrator.getVoiceInfo().platform === 'macos') && (
+                           <button 
+                              onClick={() => voiceOrchestrator.testVoice("Welcome to The Ops Center! I'm using Apple's premium voice technology to provide you with the most natural and engaging experience possible. This voice should sound incredibly human-like and clear.")} 
+                              className="w-full px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-sm text-white"
+                           >
+                              🍎 Test Apple Premium Voice
+                           </button>
+                        )}
+
+                        {/* Auto-Optimize Button */}
+                        <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3">
+                           <div className="flex items-center justify-between">
+                              <div>
+                                 <div className="text-sm font-medium text-blue-300">Auto-Optimize Voice</div>
+                                 <div className="text-xs text-blue-400">Automatically select the best available voice for your platform</div>
+                              </div>
+                              <button onClick={() => {
+                                 voiceOrchestrator.refreshVoices();
+                                 voiceOrchestrator.reloadVoicePreference();
+                                 setSelectedVoice('');
+                              }} className="px-3 py-1 rounded text-xs font-medium bg-blue-600 hover:bg-blue-500">
+                                 Optimize
+                              </button>
+                           </div>
+                        </div>
+
+                        {/* Apple Voice Discovery */}
+                        {(voiceOrchestrator.getVoiceInfo().platform === 'ios' || voiceOrchestrator.getVoiceInfo().platform === 'macos') && (
+                           <div className="bg-green-900/30 border border-green-700/50 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                 <div>
+                                    <div className="text-sm font-medium text-green-300">🍎 Apple Voice Discovery</div>
+                                    <div className="text-xs text-green-400">Force discovery of all available Apple premium voices</div>
+                                 </div>
+                                 <button onClick={() => {
+                                    voiceOrchestrator.forceAppleVoiceDiscovery();
+                                    setTimeout(() => {
+                                       voiceOrchestrator.reloadVoicePreference();
+                                       setSelectedVoice('');
+                                    }, 1200);
+                                 }} className="px-3 py-1 rounded text-xs font-medium bg-green-600 hover:bg-green-500">
+                                    Discover
+                                 </button>
+                              </div>
+                           </div>
+                        )}
+                     </div>
+
+                     {/* Language Selection */}
+                     <div className="mt-4">
                         <label className="block text-sm font-medium text-slate-400 mb-1">Language</label>
                         <select value={formData.profile.language || 'en-US'} onChange={(e) => handleProfileChange('language', e.target.value)} className="w-full bg-slate-700 rounded-md p-2 border border-slate-600 text-sm">
                             <option value="en-US">English (US)</option>
@@ -286,7 +384,7 @@ const Garage: React.FC = () => {
                             <option value="es-ES">Español (España)</option>
                             <option value="fr-FR">Français (France)</option>
                         </select>
-                    </div>
+                     </div>
                 </Card>
 
                 <Card title="Archived Notes" className="lg:col-span-2">

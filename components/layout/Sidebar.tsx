@@ -5,6 +5,7 @@ import { View } from '../../types';
 import LexAvatar from '../voice/LexAvatar';
 import LexWaveEmitter from '../voice/LexWaveEmitter';
 import UserDisplay from './UserDisplayIframe';
+import { db } from '../../services/db';
 
 const Icon: React.FC<{ children: React.ReactNode }> = ({ children }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="-1 -1 26 26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-3 shrink-0">{children}</svg>;
 const PulseIcon = () => <Icon><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></Icon>;
@@ -99,6 +100,29 @@ const Sidebar: React.FC = () => {
                 {bottomNavItems.map((item) => <NavButton key={item.view} {...item} />)}
              </ul>
            </nav>
+           
+           {/* Reset Onboarding Button */}
+           <div className="mt-4 px-1">
+             <button
+               onClick={async () => {
+                 if (confirm('Reset onboarding? This will clear your profile and show the onboarding flow again.')) {
+                   try {
+                     await db.userProfile.delete('main');
+                     window.location.reload();
+                   } catch (error) {
+                     console.error('Failed to reset onboarding:', error);
+                     alert('Failed to reset onboarding. Please try again.');
+                   }
+                 }
+               }}
+               className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-red-700/50 transition-colors group border border-red-700/30 text-red-300 hover:text-red-200"
+             >
+               <svg className="w-5 h-5 text-red-400 group-hover:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+               </svg>
+               <span>Reset Onboarding</span>
+             </button>
+           </div>
         </div>
       </div>
       

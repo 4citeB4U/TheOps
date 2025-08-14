@@ -125,6 +125,7 @@ declare global {
 import { Phase, View, Audience, Note } from '../types';
 import { processVoiceCommand } from './geminiService';
 import { db } from './db';
+import { geminiLiveVoice, GEMINI_VOICES, type GeminiVoice } from './geminiLiveVoice';
 
 class VoiceOrchestrator {
   private currentPhase: Phase = 'IDLE';
@@ -133,6 +134,8 @@ class VoiceOrchestrator {
   private finalTranscript: string = '';
   private preferredVoice: SpeechSynthesisVoice | null = null;
   private ttsQueue: SpeechSynthesisUtterance[] = [];
+  private useGeminiLive: boolean = true; // Default to Gemini Live when available
+  private geminiVoice: GeminiVoice = GEMINI_VOICES[0]; // Default to Marcus
   
   private dictationTarget: HTMLInputElement | HTMLTextAreaElement | null = null;
   private speechEndTimeout: number | null = null;
@@ -643,8 +646,31 @@ class VoiceOrchestrator {
         localService: voice.localService,
         default: voice.default,
         qualityScore: this.scoreVoiceQuality(voice, platform, browser)
-      })).sort((a, b) => b.qualityScore - a.qualityScore)
+      })).sort((a, b) => b.qualityScore - a.qualityScore),
+      geminiLive: {
+        isAvailable: geminiLiveVoice.isServiceAvailable(),
+        isEnabled: this.useGeminiLive,
+        currentVoice: this.geminiVoice,
+        availableVoices: GEMINI_VOICES
+      }
     };
+  }
+
+  public setGeminiLiveVoice(voiceId: string): boolean {
+    return geminiLiveVoice.setVoice(voiceId);
+  }
+
+  public toggleGeminiLive(enabled: boolean): void {
+    this.useGeminiLive = enabled;
+    console.log(`Gemini Live Voice: ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  public isGeminiLiveAvailable(): boolean {
+    return geminiLiveVoice.isServiceAvailable();
+  }
+
+  public getGeminiVoiceQuality(): 'gemini_live' | 'safari' | 'fallback' {
+    return geminiLiveVoice.getVoiceQuality();
   }
 
   private initSpeechSynthesis() {
@@ -870,14 +896,7 @@ class VoiceOrchestrator {
     return sanitized.trim();
   }
 
-  public speak(text: string) {
-    if (!window.speechSynthesis) {
-      console.warn("Speech Synthesis not supported.");
-      window.dispatchEvent(new CustomEvent('lex.ui.chat.show', { detail: { role: 'assistant', text } }));
-      this.dispatchPhaseChange('IDLE');
-      return;
-    }
-    
+  public async speak(text: string) {
     if (!text || text.trim().length === 0) {
       console.warn("TTS speak() called with empty text. Aborting.");
       return;
@@ -891,6 +910,34 @@ class VoiceOrchestrator {
     }
     
     window.dispatchEvent(new CustomEvent('lex.ui.chat.show', { detail: { role: 'assistant', text } }));
+
+    // Try Gemini Live first if enabled and available
+    if (this.useGeminiLive && geminiLiveVoice.isServiceAvailable()) {
+      try {
+        console.log(`🎯 Using Gemini Live Voice: ${this.geminiVoice.name}`);
+        this.dispatchPhaseChange('SPEAKING');
+        window.dispatchEvent(new Event('lex.tts.start'));
+        
+        const success = await geminiLiveVoice.speak(sanitizedText);
+        if (success) {
+          // Gemini Live handled the speech
+          window.dispatchEvent(new Event('lex.tts.end'));
+          this.dispatchPhaseChange('IDLE');
+          return;
+        } else {
+          console.log('Gemini Live failed, falling back to system TTS');
+        }
+      } catch (error) {
+        console.error('Gemini Live error, falling back to system TTS:', error);
+      }
+    }
+
+    // Fallback to system TTS
+    if (!window.speechSynthesis) {
+      console.warn("Speech Synthesis not supported.");
+      this.dispatchPhaseChange('IDLE');
+      return;
+    }
 
     // Ensure we have the best voice selected
     if (!this.preferredVoice) {
@@ -924,7 +971,7 @@ class VoiceOrchestrator {
     
     if (this.preferredVoice) {
         utterance.voice = this.preferredVoice;
-        console.log(`Speaking with voice: ${this.preferredVoice.name} (Quality: ${voiceQuality})`);
+        console.log(`Speaking with system voice: ${this.preferredVoice.name} (Quality: ${voiceQuality})`);
     } else {
         console.warn('No preferred voice set, using system default');
     }

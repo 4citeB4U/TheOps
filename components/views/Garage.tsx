@@ -335,6 +335,16 @@ const Garage: React.FC = () => {
                            </button>
                         )}
 
+                        {/* Gemini Live Voice Test */}
+                        {voiceOrchestrator.getVoiceInfo().geminiLive.isAvailable && voiceOrchestrator.getVoiceInfo().geminiLive.isEnabled && (
+                           <button 
+                              onClick={() => voiceOrchestrator.testVoice("Welcome to The Ops Center! I'm using Gemini Live AI voice technology to provide you with the most natural and engaging experience possible. This voice should sound incredibly human-like and clear.")} 
+                              className="w-full px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-sm text-white"
+                           >
+                              🎯 Test Gemini Live Voice
+                           </button>
+                        )}
+
                         {/* Auto-Optimize Button */}
                         <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3">
                            <div className="flex items-center justify-between">
@@ -390,6 +400,47 @@ const Garage: React.FC = () => {
                                  }} className="px-3 py-1 rounded text-xs font-medium bg-blue-600 hover:bg-blue-500">
                                     Refresh
                                  </button>
+                              </div>
+                           </div>
+                        )}
+
+                        {/* Gemini Live Voice Controls */}
+                        {voiceOrchestrator.getVoiceInfo().geminiLive.isAvailable && (
+                           <div className="bg-purple-900/30 border border-purple-700/50 rounded-lg p-3">
+                              <div className="space-y-3">
+                                 <div className="flex items-center justify-between">
+                                    <div>
+                                       <div className="text-sm font-medium text-purple-300">🎯 Gemini Live Voice</div>
+                                       <div className="text-xs text-purple-400">Premium AI voices including African American male options</div>
+                                    </div>
+                                    <button 
+                                       onClick={() => voiceOrchestrator.toggleGeminiLive(!voiceOrchestrator.getVoiceInfo().geminiLive.isEnabled)}
+                                       className={`px-3 py-1 rounded text-xs font-medium ${
+                                          voiceOrchestrator.getVoiceInfo().geminiLive.isEnabled 
+                                             ? 'bg-green-600 hover:bg-green-500' 
+                                             : 'bg-purple-600 hover:bg-purple-500'
+                                       }`}
+                                    >
+                                       {voiceOrchestrator.getVoiceInfo().geminiLive.isEnabled ? 'Enabled' : 'Disabled'}
+                                    </button>
+                                 </div>
+                                 
+                                 {voiceOrchestrator.getVoiceInfo().geminiLive.isEnabled && (
+                                    <div>
+                                       <label className="block text-xs font-medium text-purple-300 mb-2">Select Voice</label>
+                                       <select 
+                                          value={voiceOrchestrator.getVoiceInfo().geminiLive.currentVoice.id}
+                                          onChange={(e) => voiceOrchestrator.setGeminiLiveVoice(e.target.value)}
+                                          className="w-full bg-slate-700 rounded-md p-2 border border-slate-600 text-xs"
+                                       >
+                                          {voiceOrchestrator.getVoiceInfo().geminiLive.availableVoices.map(voice => (
+                                             <option key={voice.id} value={voice.id}>
+                                                {voice.name} - {voice.description}
+                                             </option>
+                                          ))}
+                                       </select>
+                                    </div>
+                                 )}
                               </div>
                            </div>
                         )}

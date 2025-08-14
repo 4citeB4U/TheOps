@@ -372,6 +372,27 @@ const Garage: React.FC = () => {
                               </div>
                            </div>
                         )}
+
+                        {/* Safari Voice Refresh */}
+                        {voiceOrchestrator.getVoiceInfo().browser === 'safari' && (
+                           <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                 <div>
+                                    <div className="text-sm font-medium text-blue-300">🌐 Safari Voice Refresh</div>
+                                    <div className="text-xs text-blue-400">Force Safari to load all available voices properly</div>
+                                 </div>
+                                 <button onClick={() => {
+                                    voiceOrchestrator.forceSafariVoiceRefresh();
+                                    setTimeout(() => {
+                                       voiceOrchestrator.reloadVoicePreference();
+                                       setSelectedVoice('');
+                                    }, 1500);
+                                 }} className="px-3 py-1 rounded text-xs font-medium bg-blue-600 hover:bg-blue-500">
+                                    Refresh
+                                 </button>
+                              </div>
+                           </div>
+                        )}
                      </div>
 
                      {/* Language Selection */}

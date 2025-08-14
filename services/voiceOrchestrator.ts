@@ -573,6 +573,39 @@ class VoiceOrchestrator {
     }, 1000);
   }
 
+  public forceSafariVoiceRefresh() {
+    if (!this.isSafari()) {
+      console.log('Not Safari, skipping Safari voice refresh');
+      return;
+    }
+    
+    console.log('🌐 Forcing Safari voice refresh...');
+    
+    // Safari needs multiple attempts to load voices properly
+    const attemptVoiceLoad = (attempt: number = 1) => {
+      if (attempt > 5) {
+        console.log('Safari: Max voice load attempts reached');
+        return;
+      }
+      
+      console.log(`Safari: Voice load attempt ${attempt}`);
+      
+      if (window.speechSynthesis.onvoiceschanged) {
+        window.speechSynthesis.onvoiceschanged();
+      }
+      
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        console.log(`Safari: Successfully loaded ${voices.length} voices on attempt ${attempt}`);
+        this._updatePreferredVoice();
+      } else {
+        setTimeout(() => attemptVoiceLoad(attempt + 1), 200 * attempt);
+      }
+    };
+    
+    attemptVoiceLoad();
+  }
+
   public testVoice(text: string = "Hello, this is a test of the voice system. How does this sound?") {
     if (!this.preferredVoice) {
       this._updatePreferredVoice();
@@ -616,9 +649,40 @@ class VoiceOrchestrator {
 
   private initSpeechSynthesis() {
     if (!window.speechSynthesis) return;
-    const setVoice = () => this._updatePreferredVoice();
-    window.speechSynthesis.onvoiceschanged = setVoice;
-    setVoice();
+    
+    // Safari-specific voice loading fix
+    if (this.isSafari()) {
+      console.log('🍎 Safari detected - using enhanced voice loading');
+      
+      // Multiple voice loading attempts for Safari
+      const loadVoicesForSafari = () => {
+        const voices = window.speechSynthesis.getVoices();
+        console.log('Safari: Attempting to load voices, found:', voices.length);
+        
+        if (voices.length > 0) {
+          this._updatePreferredVoice();
+        } else {
+          // Retry multiple times for Safari
+          setTimeout(loadVoicesForSafari, 100);
+          setTimeout(loadVoicesForSafari, 500);
+          setTimeout(loadVoicesForSafari, 1000);
+        }
+      };
+      
+      // Initial load attempt
+      loadVoicesForSafari();
+      
+      // Set up voice change handler
+      window.speechSynthesis.onvoiceschanged = () => {
+        console.log('Safari: onvoiceschanged event fired');
+        loadVoicesForSafari();
+      };
+    } else {
+      // Standard voice loading for other browsers
+      const setVoice = () => this._updatePreferredVoice();
+      window.speechSynthesis.onvoiceschanged = setVoice;
+      setVoice();
+    }
   }
 
   private dispatchPhaseChange(phase: Phase) {

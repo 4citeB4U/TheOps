@@ -12,11 +12,55 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LΞX Ops Center">
     
+    <!-- Safari-specific PWA optimizations -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="LΞX Ops Center">
+    <meta name="msapplication-TileColor" content="#0f172a">
+    <meta name="msapplication-tap-highlight" content="no">
+    
     <!-- Manifest -->
     <link rel="manifest" href="/TheOps/manifest.json">
     
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/TheOps/LEX.svg">
+    
+    <!-- Safari Voice Loading Fix -->
+    <script>
+      // Safari voice loading fix
+      if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
+        window.addEventListener('load', function() {
+          // Force voice loading in Safari
+          if (window.speechSynthesis) {
+            // Multiple attempts to load voices
+            const loadVoices = () => {
+              const voices = window.speechSynthesis.getVoices();
+              console.log('Safari: Loaded', voices.length, 'voices');
+              if (voices.length === 0) {
+                setTimeout(loadVoices, 100);
+              }
+            };
+            
+            // Initial load
+            loadVoices();
+            
+            // Force refresh
+            setTimeout(() => {
+              if (window.speechSynthesis.onvoiceschanged) {
+                window.speechSynthesis.onvoiceschanged();
+              }
+            }, 500);
+            
+            // Additional refresh
+            setTimeout(() => {
+              if (window.speechSynthesis.onvoiceschanged) {
+                window.speechSynthesis.onvoiceschanged();
+              }
+            }, 1000);
+          }
+        });
+      }
+    </script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">

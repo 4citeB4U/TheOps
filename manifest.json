@@ -5,18 +5,30 @@
   "description": "LΞX is your ops center, locked in. A private, voice-first co-pilot for your academic life.",
   "icons": [
     {
-      "src": "./logo192.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
     },
     {
-      "src": "./logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/TheOps/",
+  "scope": "/TheOps/",
   "display": "standalone",
   "theme_color": "#0f172a",
-  "background_color": "#0a0f1a"
+  "background_color": "#0a0f1a",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"],
+  "lang": "en"
 }

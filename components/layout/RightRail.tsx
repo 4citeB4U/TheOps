@@ -79,20 +79,40 @@ const RightRail: React.FC = () => {
   return (
     <aside className={railClasses}>
       <PhaseIndicator phase={phase} transcript={transcript} />
-      <div className="flex-grow p-4 overflow-y-auto">
-        <div className="flex flex-col space-y-4">
-          {chatHistory.length > 0 ? chatHistory.map((msg, index) => (
-            <ChatBubble key={index} message={msg} />
-          )) : (
-            <div className="text-center text-slate-500 pt-10">
-                <p>Chat history is empty.</p>
-                <p className="text-xs mt-2">Conversations are saved to your notes.</p>
-            </div>
-          )}
-          <div ref={chatEndRef} />
+      <div className="flex-grow overflow-hidden">
+        <div className="h-full overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
+          <div className="flex flex-col space-y-4">
+            {chatHistory.length > 0 ? chatHistory.map((msg, index) => (
+              <ChatBubble key={index} message={msg} />
+            )) : (
+              <div className="text-center text-slate-500 pt-10">
+                  <p>Chat history is empty.</p>
+                  <p className="text-xs mt-2">Conversations are saved to your notes.</p>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
         </div>
       </div>
-      <div className="p-4 border-t border-slate-700">
+      <div className="p-4 border-t border-slate-700 space-y-3">
+        {/* Chat Input Box */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Type your message..."
+            className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-primary-blue focus:ring-1 focus:ring-primary-blue/50"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                // Handle sending message
+                e.currentTarget.value = '';
+              }
+            }}
+          />
+          <button className="px-4 py-2 bg-primary-blue text-white rounded-lg hover:bg-primary-blue/90 transition-colors">
+            Send
+          </button>
+        </div>
+        
         <button 
             onClick={saveAndClearChat}
             disabled={chatHistory.length === 0}

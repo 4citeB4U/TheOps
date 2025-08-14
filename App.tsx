@@ -155,7 +155,7 @@ function App() {
       {showBackupReminder && <BackupReminder onDismiss={handleDismissReminder} onBackup={handleGoToBackup} />}
       <MobileHeader onMenuClick={toggleSidebar} onChatClick={toggleRightRail} />
 
-      <div className={`main-content-area flex-grow ${layoutClass}`}>
+      <div className={`main-content-area flex-grow ${layoutClass} overflow-hidden`}>
         <Sidebar />
         <Workspace />
         <RightRail />

@@ -1,7 +1,19 @@
 # The Ops Center
 
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#444" />
+        <stop offset="100%" stop-color="#222" />
+      </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="white"/>
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle"
+          font-family="serif" font-size="64" font-weight="bold" fill="url(#grad)">
+      LΞX
+    </text>
+  </svg>
 </div>
 
 ## 🚀 AI-Powered Operations Center

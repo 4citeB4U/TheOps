@@ -14,7 +14,7 @@ const VITE_DISABLE_SW = process.env.VITE_DISABLE_SW === '1';
 if (!isDev && !VITE_DISABLE_SW) {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { scope: './' }).then(registration => {
+      navigator.serviceWorker.register('./sw.js', { scope: '/TheOps/' }).then(registration => {
         console.log('SW registered: ', registration);
       }).catch(registrationError => {
         console.log('SW registration failed: ', registrationError);

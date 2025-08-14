@@ -1,0 +1,22 @@
+
+{
+  "short_name": "LΞX",
+  "name": "LΞX Ops Center",
+  "description": "LΞX is your ops center, locked in. A private, voice-first co-pilot for your academic life.",
+  "icons": [
+    {
+      "src": "./logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "./logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0a0f1a"
+}

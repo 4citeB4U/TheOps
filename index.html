@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LΞX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary-blue: #3b82f6;
+        --accent-fuchsia: #d946ef;
+        --positive-green: #22c55e;
+        --warning-red: #ef4444;
+        --bg-main: #0A0A0F;
+        --bg-surface: #111827; /* gray-900 */
+        --text-light: #E2E8F0;
+        --text-dark: #94A3B8;
+        --border-color: #374151; /* gray-700 */
+        --border-radius: 0.75rem; /* 12px */
+      }
+      body {
+        background-color: transparent;
+        color: var(--text-light);
+      }
+      /* Greeting Text Effects */
+      @keyframes fire-flicker {
+        0%, 100% { text-shadow: 0 0 4px #fff, 0 0 11px #fff, 0 0 19px #fff, 0 0 40px #ef4444, 0 0 80px #ef4444; }
+        50% { text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff, 0 0 38px #ef4444, 0 0 75px #ef4444; }
+      }
+      .text-effect-fire { color: #fca5a5; animation: fire-flicker 2s ease-in-out infinite alternate; }
+      @keyframes electric-crackle {
+        0% { text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6; }
+        100% { text-shadow: 0 0 5px #3b82f6, 0 0 12px #3b82f6; }
+      }
+      .text-effect-electric { color: #93c5fd; animation: electric-crackle 0.1s linear infinite alternate; }
+      .text-effect-glow { color: #fff; text-shadow: 0 0 7px var(--text-light), 0 0 10px var(--text-light); }
+
+      /* Lex Console Animations */
+      @keyframes breathing {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 70, 239, 0.4); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(217, 70, 239, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 70, 239, 0); }
+      }
+      .lex-console-idle-breathing {
+        animation: breathing 2.5s ease-in-out infinite;
+      }
+      @keyframes listening-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        50% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+      }
+      .lex-console-listening {
+        animation: listening-pulse 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+      }
+      @keyframes speaking-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        50% { box-shadow: 0 0 0 14px rgba(34, 197, 94, 0); }
+      }
+      .lex-console-speaking-pulse {
+        animation: speaking-pulse 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+      }
+      @keyframes thinking-chase {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .lex-console-thinking-ring {
+        position: absolute;
+        width: 100%; height: 100%;
+        border-radius: 50%;
+        border: 4px solid transparent;
+        border-top-color: var(--primary-blue);
+        animation: thinking-chase 1s linear infinite;
+      }
+
+      /* Highlight Animations */
+      @keyframes glow-text-red {
+          from { text-shadow: 0 0 5px var(--warning-red), 0 0 10px var(--warning-red); }
+          to { text-shadow: 0 0 10px #f87171, 0 0 20px #f87171; }
+      }
+      @keyframes glow-text-yellow {
+          from { text-shadow: 0 0 5px #facc15, 0 0 10px #facc15; }
+          to { text-shadow: 0 0 10px #fde047, 0 0 20px #fde047; }
+      }
+
+      /* Mobile Responsive Styles */
+      .mobile-header { display: none; }
+      .backdrop { display: none; }
+
+      @media (max-width: 768px) {
+        .mobile-header {
+          display: flex;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 60px;
+          background-color: var(--bg-surface);
+          border-bottom: 1px solid var(--border-color);
+          z-index: 50;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 1rem;
+        }
+        .main-content-area {
+          padding-top: 60px;
+        }
+        .sidebar, .right-rail {
+            position: fixed;
+            top: 0;
+            height: 100vh;
+            z-index: 100;
+            transition: transform 0.3s ease-in-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .sidebar {
+            left: 0;
+            transform: translateX(-100%);
+        }
+        .right-rail {
+            right: 0;
+            transform: translateX(100%);
+        }
+        .sidebar.sidebar-open, .right-rail.right-rail-open {
+            transform: translateX(0);
+        }
+        .backdrop {
+            display: block;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 99;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .workspace {
+          padding-top: 0;
+          padding-bottom: 80px; /* Space for FAB */
+        }
+      }
+    </style>
+    <script>
+      // Dev reset logic from the prompt
+      if (new URLSearchParams(window.location.search).has('fresh')) {
+        window.addEventListener('load', () => {
+            console.log('FRESH START: Clearing all caches and storage.');
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (const registration of registrations) { registration.unregister(); }
+              }).catch(err => console.error('Error unregistering SWs:', err));
+            }
+            caches.keys().then(keys => { keys.forEach(key => caches.delete(key)); });
+            localStorage.clear();
+            sessionStorage.clear();
+            indexedDB.databases && indexedDB.databases().then(dbs => {
+              dbs.forEach(db => indexedDB.deleteDatabase(db.name));
+            });
+            const url = new URL(window.location);
+            url.searchParams.delete('fresh');
+            window.location.replace(url);
+        });
+      }
+      // Tailwind Configuration
+      tailwind.config = {
+        safelist: [
+          'text-red-400',
+          'text-yellow-400',
+          'text-green-400',
+        ],
+        theme: {
+          extend: {
+            colors: {
+              'primary-blue': 'var(--primary-blue)',
+              'accent-fuchsia': 'var(--accent-fuchsia)',
+              'positive-green': 'var(--positive-green)',
+              'warning-red': 'var(--warning-red)',
+              'bg-main': 'var(--bg-main)',
+              'bg-surface': 'var(--bg-surface)',
+              'text-light': 'var(--text-light)',
+              'text-dark': 'var(--text-dark)',
+              'border-color': 'var(--border-color)',
+            },
+            borderRadius: {
+              'DEFAULT': 'var(--border-radius)',
+              'lg': 'var(--border-radius)',
+              'xl': 'calc(var(--border-radius) + 4px)',
+              '2xl': 'calc(var(--border-radius) + 8px)',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.13.0",
+    "dexie-react-hooks": "https://esm.sh/dexie-react-hooks@^1.1.7",
+    "dexie": "https://esm.sh/dexie@^4.0.11",
+    "vite": "https://esm.sh/vite@^7.1.2",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.0.0",
+    "framer-motion": "https://esm.sh/framer-motion@^11.3.11"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="text-text-light">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

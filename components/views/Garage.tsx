@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAppContext } from '../../contexts/AppContext';
 import { db } from '../../services/db';
@@ -37,7 +37,8 @@ const Garage: React.FC = () => {
     const { 
         flow, setFlow, 
         userProfile, updateUserProfile,
-        greetingSettings, updateGreetingSettings
+        greetingSettings, updateGreetingSettings,
+        resetOnboarding
     } = useAppContext();
     
     const [formData, setFormData] = useState<{
@@ -51,38 +52,88 @@ const Garage: React.FC = () => {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState(localStorage.getItem('lex_voice_preference') || '');
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
+    // Show loading state while initializing
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-blue mx-auto mb-4"></div>
+                    <p className="text-white text-lg">Loading Garage...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Memoize archived notes to prevent unnecessary re-renders
     const archivedNotes = useLiveQuery(() => db.notes.where('archived').equals(1).toArray(), []);
     
+    // Memoize form data initialization to prevent unnecessary re-renders
+    const initialFormData = useMemo(() => {
+        if (!userProfile) return null;
+        return {
+            profile: {
+                name: userProfile.name,
+                layout: userProfile.layout || 'sidebar_main_chat',
+                borderRadius: userProfile.borderRadius ?? 12,
+                emojiAmbiance: userProfile.emojiAmbiance || [],
+                backgroundImage: userProfile.backgroundImage,
+                language: userProfile.language || 'en-US'
+            },
+            greeting: greetingSettings || {
+                id: 'main',
+                fontFamily: 'Inter',
+                textColor: '#FFFFFF',
+                textEffect: 'none',
+                fontSize: 32,
+                fontWeight: 700,
+                letterSpacing: 0,
+            }
+        };
+    }, [userProfile, greetingSettings]);
+    
     useEffect(() => {
-        if (userProfile && !isInitialized) {
-            setFormData({
-                profile: {
-                    name: userProfile.name,
-                    layout: userProfile.layout || 'sidebar_main_chat',
-                    borderRadius: userProfile.borderRadius ?? 12,
-                    emojiAmbiance: userProfile.emojiAmbiance || [],
-                    backgroundImage: userProfile.backgroundImage,
-                    language: userProfile.language || 'en-US'
-                },
-                greeting: greetingSettings || {
-                    id: 'main',
-                    fontFamily: 'Inter',
-                    textColor: '#FFFFFF',
-                    textEffect: 'none',
-                    fontSize: 32,
-                    fontWeight: 700,
-                    letterSpacing: 0,
-                }
-            });
+        if (initialFormData && !isInitialized) {
+            setFormData(initialFormData);
             setIsInitialized(true);
+            setIsLoading(false);
         }
-    }, [userProfile, greetingSettings, isInitialized]);
-
+    }, [initialFormData, isInitialized]);
+    
+    // Handle loading states
     useEffect(() => {
-        const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
-        window.speechSynthesis.onvoiceschanged = loadVoices;
+        if (userProfile && greetingSettings !== undefined) {
+            setIsLoading(false);
+        }
+    }, [userProfile, greetingSettings]);
+    
+    // Handle errors
+    useEffect(() => {
+        if (loadError) {
+            console.error('Garage loading error:', loadError);
+        }
+    }, [loadError]);
+
+    // Optimize voice loading with debouncing
+    useEffect(() => {
+        const loadVoices = () => {
+            const availableVoices = window.speechSynthesis.getVoices();
+            if (availableVoices.length > 0) {
+                setVoices(availableVoices);
+            }
+        };
+        
+        // Load voices immediately if available
         loadVoices();
+        
+        // Set up event listener for when voices change
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        
+        return () => {
+            window.speechSynthesis.onvoiceschanged = null;
+        };
     }, []);
 
     const handleProfileChange = (field: keyof UserProfile, value: any) => {
@@ -169,6 +220,27 @@ const Garage: React.FC = () => {
                 <button onClick={saveAllSettings} className="px-6 py-3 rounded-lg font-semibold bg-primary-blue text-white hover:opacity-90 transition-opacity">
                     Save All Settings
                 </button>
+            </div>
+            
+            {/* Reset Onboarding Button */}
+            <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="text-sm font-medium text-red-300">🔄 Reset Onboarding</div>
+                        <div className="text-xs text-red-400">Clear user profile and restart onboarding process</div>
+                    </div>
+                    <button 
+                        onClick={async () => {
+                            if (confirm('Are you sure you want to reset onboarding? This will clear your profile and restart the setup process.')) {
+                                await resetOnboarding();
+                                window.location.reload();
+                            }
+                        }}
+                        className="px-4 py-2 rounded text-sm font-medium bg-red-600 hover:bg-red-500 text-white"
+                    >
+                        Reset Onboarding
+                    </button>
+                </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -337,12 +409,27 @@ const Garage: React.FC = () => {
 
                         {/* Gemini Live Voice Test */}
                         {voiceOrchestrator.getVoiceInfo().geminiLive.isAvailable && voiceOrchestrator.getVoiceInfo().geminiLive.isEnabled && (
-                           <button 
-                              onClick={() => voiceOrchestrator.testVoice("Welcome to The Ops Center! I'm using Gemini Live AI voice technology to provide you with the most natural and engaging experience possible. This voice should sound incredibly human-like and clear.")} 
-                              className="w-full px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-sm text-white"
-                           >
-                              🎯 Test Gemini Live Voice
-                           </button>
+                           <div className="space-y-2">
+                              <button 
+                                 onClick={() => voiceOrchestrator.testVoice("Welcome to The Ops Center! I'm using Gemini Live AI voice technology to provide you with the most natural and engaging experience possible. This voice should sound incredibly human-like and clear.")} 
+                                 className="w-full px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-sm text-white"
+                              >
+                                 🎯 Test Gemini Live Voice
+                              </button>
+                              <button 
+                                 onClick={async () => {
+                                    const isConnected = await voiceOrchestrator.testGeminiConnection();
+                                    if (isConnected) {
+                                       alert('✅ Gemini Live API connection successful!');
+                                    } else {
+                                       alert('❌ Gemini Live API connection failed. Check console for details.');
+                                    }
+                                 }}
+                                 className="w-full px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-sm text-white"
+                              >
+                                 🔗 Test Gemini Live Connection
+                              </button>
+                           </div>
                         )}
 
                         {/* Auto-Optimize Button */}

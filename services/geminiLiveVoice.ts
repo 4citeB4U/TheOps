@@ -114,25 +114,27 @@ class GeminiLiveVoiceService {
       console.log(`Gemini Live Voice: Speaking "${text}" with voice ${this.currentVoice.name}`);
       this.isPlaying = true;
 
-      // Use Gemini Live for text-to-speech
+      // Use Gemini Live for text-to-speech with correct API structure
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: text,
-        config: {
-          generationConfig: {
-            responseMimeType: 'audio/mpeg',
-            audioConfig: {
-              voiceId: this.currentVoice.id,
-              audioEncoding: 'MP3',
-              sampleRateHertz: 24000
-            }
+        contents: [{
+          role: 'user',
+          parts: [{ text: `Convert this text to speech using voice ${this.currentVoice.name}: ${text}` }]
+        }],
+        generationConfig: {
+          responseMimeType: 'audio/mpeg',
+          audioConfig: {
+            voiceId: this.currentVoice.id,
+            audioEncoding: 'MP3',
+            sampleRateHertz: 24000
           }
         }
       });
 
-      if (response.audio) {
+      // Check for audio response
+      if (response.response && response.response.audio) {
         // Convert audio data to playable format
-        const audioBlob = new Blob([response.audio], { type: 'audio/mpeg' });
+        const audioBlob = new Blob([response.response.audio], { type: 'audio/mpeg' });
         const audioUrl = URL.createObjectURL(audioBlob);
         
         // Play the audio
@@ -150,13 +152,37 @@ class GeminiLiveVoiceService {
         await audio.play();
         return true;
       } else {
-        console.warn('Gemini Live Voice: No audio data received');
+        console.warn('Gemini Live Voice: No audio data received, falling back to system TTS');
         this.isPlaying = false;
         return false;
       }
     } catch (error) {
       console.error('Gemini Live Voice: Error during speech synthesis:', error);
+      
+      // Log specific error details for debugging
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        });
+      }
+      
       this.isPlaying = false;
+      return false;
+    }
+  }
+
+  // Add method to test API connectivity
+  public async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{ role: 'user', parts: [{ text: 'Test connection' }] }]
+      });
+      return !!response.response;
+    } catch (error) {
+      console.error('Gemini Live Voice: Connection test failed:', error);
       return false;
     }
   }

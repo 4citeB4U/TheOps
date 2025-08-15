@@ -673,6 +673,10 @@ class VoiceOrchestrator {
     return geminiLiveVoice.getVoiceQuality();
   }
 
+  public async testGeminiConnection(): Promise<boolean> {
+    return await geminiLiveVoice.testConnection();
+  }
+
   private initSpeechSynthesis() {
     if (!window.speechSynthesis) return;
     

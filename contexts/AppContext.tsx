@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { View, ChatMessage, Phase, Audience, UserProfile, GreetingSettings, AppLayout } from '../types';
 import { db } from '../services/db';
@@ -14,6 +14,7 @@ interface AppContextType {
   saveAndClearChat: () => void;
   isOnboarding: boolean;
   completeOnboarding: (name: string, skipped: boolean) => void;
+  resetOnboarding: () => Promise<void>;
   highlightedNavItem: View | null;
   setHighlightedNavItem: (view: View | null) => void;
   // Vernacular State
@@ -51,7 +52,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const userProfile = useLiveQuery(() => db.userProfile.get('main'), []);
   const greetingSettings = useLiveQuery(() => db.appearanceSettings.get('main'), []);
   
-  const isOnboarding = !userProfile;
+  // Check if onboarding is needed - more robust check
+  const isOnboarding = useMemo(() => {
+    if (!userProfile) return true;
+    if (userProfile.onboardingStatus === 'skipped' || userProfile.onboardingStatus === 'completed') return false;
+    return true;
+  }, [userProfile]);
 
   // Vernacular state with localStorage persistence
   const [flow, setFlowState] = useState<number>(() => Number(localStorage.getItem('lexFlow') || 50));
@@ -104,6 +110,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       onboardingStatus: skipped ? 'skipped' : 'completed',
     };
     await db.userProfile.put(profileData, 'main');
+  }, []);
+
+  const resetOnboarding = useCallback(async () => {
+    try {
+      await db.userProfile.delete('main');
+      console.log('Onboarding reset successfully');
+    } catch (error) {
+      console.error('Failed to reset onboarding:', error);
+    }
   }, []);
 
   const updateUserProfile = useCallback(async (profile: Partial<UserProfile>) => {
@@ -190,7 +205,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{ 
         currentView, setCurrentView, chatHistory, saveAndClearChat, 
-        isOnboarding, completeOnboarding, highlightedNavItem, setHighlightedNavItem, 
+        isOnboarding, completeOnboarding, resetOnboarding, highlightedNavItem, setHighlightedNavItem, 
         flow, setFlow, audience, setAudience,
         userProfile, greetingSettings,
         updateUserProfile, updateGreetingSettings,

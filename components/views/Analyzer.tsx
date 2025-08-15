@@ -160,49 +160,65 @@ const Analyzer: React.FC = () => {
     };
 
     return (
-        <div className="p-8 flex flex-col">
-            <h1 className="text-4xl font-extrabold text-white mb-2">The Analyzer</h1>
-            <p className="text-lg text-text-dark mb-8">Turn images and documents into structured intelligence.</p>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left Column: Image Intake */}
-                <div className="bg-slate-800 rounded-xl p-6 flex flex-col border border-border-color">
-                    <h2 className="text-xl font-bold mb-4">Image Intake (The Eye)</h2>
-                    <video ref={videoRef} autoPlay playsInline className="w-full h-48 bg-black rounded-lg object-cover mb-4" onCanPlay={e => (e.target as HTMLVideoElement).play()}></video>
-                    <canvas ref={canvasRef} className="hidden"></canvas>
-                    <div className="flex gap-4">
-                        <button onClick={startCamera} className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-semibold transition-colors">Start Camera</button>
-                        <button onClick={snapPhoto} className="flex-1 p-3 bg-primary-blue hover:opacity-90 rounded-lg font-semibold transition-colors">Snap Photo</button>
-                    </div>
-                </div>
-
-                {/* Right Column: Document Intake & Queue */}
-                <div className="bg-slate-800 rounded-xl p-6 flex flex-col border border-border-color">
-                    <h2 className="text-xl font-bold mb-4">Intake Queue</h2>
-                    <label htmlFor="file-upload" className="w-full cursor-pointer bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg p-4 transition-colors flex items-center justify-center gap-3 mb-4">
-                        <UploadIcon />
-                        Upload Documents or Images
-                    </label>
-                    <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx" />
-                    <div className="space-y-2 pr-2">
-                        {queue.map(item => (
-                            <div key={item.id} className="flex items-center gap-3 bg-slate-700/50 p-2 rounded-lg">
-                                <img src={item.previewUrl} alt="preview" className="w-10 h-10 object-cover rounded"/>
-                                <span className="font-mono text-sm truncate flex-grow">{item.file.name}</span>
-                                <button onClick={() => setQueue(q => q.filter(i => i.id !== item.id))} className="text-xs text-red-400">X</button>
-                            </div>
-                        ))}
-                         {queue.length === 0 && <p className="text-center text-slate-500 pt-8">Queue is empty.</p>}
-                    </div>
-                </div>
+        <div className="h-full w-full flex flex-col overflow-hidden">
+            {/* Header Section */}
+            <div className="flex-shrink-0 p-6 border-b border-slate-700/50">
+                <h1 className="text-4xl font-extrabold text-white mb-2">The Analyzer</h1>
+                <p className="text-lg text-slate-400">Turn images and documents into structured intelligence.</p>
             </div>
 
-            <div className="shrink-0 pt-6">
-                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Analysis prompt (e.g., 'Summarize this document'). If left blank, I'll provide a general analysis." className="w-full h-20 bg-slate-700 rounded-lg p-3 mb-4 border border-border-color focus:ring-2 focus:ring-primary-blue focus:outline-none"/>
-                <button onClick={analyzeAll} disabled={isLoading || queue.length === 0} className="w-full p-4 bg-accent-fuchsia text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:bg-slate-600 disabled:cursor-not-allowed">
-                    {isLoading ? 'Analyzing...' : `Analyze ${queue.length} Item(s)`}
-                </button>
-                 {error && <p className="text-warning-red text-center mt-2 text-sm">{error}</p>}
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+                    {/* Left Column: Image Intake */}
+                    <div className="bg-slate-800 rounded-xl p-6 flex flex-col border border-slate-700">
+                        <h2 className="text-xl font-bold mb-4 text-white">Image Intake (The Eye)</h2>
+                        <video ref={videoRef} autoPlay playsInline className="w-full h-48 bg-black rounded-lg object-cover mb-4" onCanPlay={e => (e.target as HTMLVideoElement).play()}></video>
+                        <canvas ref={canvasRef} className="hidden"></canvas>
+                        <div className="flex gap-4">
+                            <button onClick={startCamera} className="flex-1 p-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-semibold transition-colors text-white">Start Camera</button>
+                            <button onClick={snapPhoto} className="flex-1 p-3 bg-primary-blue hover:opacity-90 rounded-lg font-semibold transition-colors text-white">Snap Photo</button>
+                        </div>
+                    </div>
+
+                    {/* Right Column: Document Intake & Queue */}
+                    <div className="bg-slate-800 rounded-xl p-6 flex flex-col border border-slate-700">
+                        <h2 className="text-xl font-bold mb-4 text-white">Intake Queue</h2>
+                        <label htmlFor="file-upload" className="w-full cursor-pointer bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg p-4 transition-colors flex items-center justify-center gap-3 mb-4">
+                            <UploadIcon />
+                            Upload Documents or Images
+                        </label>
+                        <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx" />
+                        <div className="space-y-2 pr-2 max-h-48 overflow-y-auto">
+                            {queue.map(item => (
+                                <div key={item.id} className="flex items-center gap-3 bg-slate-700/50 p-2 rounded-lg">
+                                    <img src={item.previewUrl} alt="preview" className="w-10 h-10 object-cover rounded"/>
+                                    <span className="font-mono text-sm truncate flex-grow text-white">{item.file.name}</span>
+                                    <button onClick={() => setQueue(q => q.filter(i => i.id !== item.id))} className="text-xs text-red-400 hover:text-red-300">X</button>
+                                </div>
+                            ))}
+                             {queue.length === 0 && <p className="text-center text-slate-500 pt-8">Queue is empty.</p>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Analysis Controls - Fixed at Bottom */}
+                <div className="flex-shrink-0">
+                    <textarea 
+                        value={prompt} 
+                        onChange={e => setPrompt(e.target.value)} 
+                        placeholder="Analysis prompt (e.g., 'Summarize this document'). If left blank, I'll provide a general analysis." 
+                        className="w-full h-20 bg-slate-700 rounded-lg p-3 mb-4 border border-slate-600 focus:ring-2 focus:ring-primary-blue focus:outline-none text-white resize-none"
+                    />
+                    <button 
+                        onClick={analyzeAll} 
+                        disabled={isLoading || queue.length === 0} 
+                        className="w-full p-4 bg-accent-fuchsia text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:bg-slate-600 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? 'Analyzing...' : `Analyze ${queue.length} Item(s)`}
+                    </button>
+                    {error && <p className="text-red-400 text-center mt-2 text-sm">{error}</p>}
+                </div>
             </div>
         </div>
     );

@@ -211,45 +211,52 @@ const Garage: React.FC = () => {
     }
 
     return (
-        <div className="p-8">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-4xl font-extrabold text-white">The Garage</h1>
-                    <p className="text-lg text-text-dark">Tune the engine. Calibrate your co-pilot.</p>
-                </div>
-                <button onClick={saveAllSettings} className="px-6 py-3 rounded-lg font-semibold bg-primary-blue text-white hover:opacity-90 transition-opacity">
-                    Save All Settings
-                </button>
-            </div>
-            
-            {/* Reset Onboarding Button */}
-            <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-between">
+        <div className="h-full w-full flex flex-col overflow-hidden">
+            {/* Header Section */}
+            <div className="flex-shrink-0 p-6 border-b border-slate-700/50">
+                <div className="flex justify-between items-center">
                     <div>
-                        <div className="text-sm font-medium text-red-300">🔄 Reset Onboarding</div>
-                        <div className="text-xs text-red-400">Clear user profile and restart onboarding process</div>
+                        <h1 className="text-4xl font-extrabold text-white">The Garage</h1>
+                        <p className="text-lg text-slate-400">Tune the engine. Calibrate your co-pilot.</p>
                     </div>
-                    <button 
-                        onClick={async () => {
-                            if (confirm('Are you sure you want to reset onboarding? This will clear your profile and restart the setup process.')) {
-                                await resetOnboarding();
-                                window.location.reload();
-                            }
-                        }}
-                        className="px-4 py-2 rounded text-sm font-medium bg-red-600 hover:bg-red-500 text-white"
-                    >
-                        Reset Onboarding
+                    <button onClick={saveAllSettings} className="px-6 py-3 rounded-lg font-semibold bg-primary-blue text-white hover:opacity-90 transition-opacity">
+                        Save All Settings
                     </button>
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Reset Onboarding Button */}
+            <div className="flex-shrink-0 mx-6 mt-4 mb-4">
+                <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-sm font-medium text-red-300">🔄 Reset Onboarding</div>
+                            <div className="text-xs text-red-400">Clear user profile and restart onboarding process</div>
+                        </div>
+                        <button 
+                            onClick={async () => {
+                                if (confirm('Are you sure you want to reset onboarding? This will clear your profile and restart the setup process.')) {
+                                    await resetOnboarding();
+                                    window.location.reload();
+                                }
+                            }}
+                            className="px-4 py-2 rounded text-sm font-medium bg-red-600 hover:bg-red-500 text-white"
+                        >
+                            Reset Onboarding
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto px-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
                 <Card title="Your Profile">
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-slate-400 mb-1">Operator Name</label>
-                            <input id="name" type="text" value={formData.profile.name || ''} onChange={(e) => handleProfileChange('name', e.target.value)} className="w-full bg-slate-700 rounded-md p-2 border border-slate-600" />
+                            <input id="name" type="text" value={formData.profile.name || ''} onChange={(e) => handleProfileChange('name', e.target.value)} className="w-full bg-slate-700 rounded-md p-2 border border-slate-600 text-white" />
                         </div>
                     </div>
                 </Card>
@@ -572,6 +579,7 @@ const Garage: React.FC = () => {
                          <button onClick={resetData} className="px-4 py-2 rounded-lg font-semibold bg-warning-red/80 text-white hover:opacity-90">Reset All Data</button>
                     </div>
                 </Card>
+            </div>
             </div>
         </div>
     );

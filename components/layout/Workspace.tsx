@@ -47,7 +47,7 @@ const Workspace: React.FC = () => {
   };
 
   return (
-    <main className="workspace bg-transparent h-full overflow-hidden">
+    <main className="workspace bg-transparent h-full w-full overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentView}
@@ -56,7 +56,7 @@ const Workspace: React.FC = () => {
           exit="out"
           variants={pageVariants}
           transition={{ duration: 0.2 }}
-          className="w-full h-full overflow-y-auto"
+          className="w-full h-full overflow-hidden"
         >
           {renderView()}
         </motion.div>

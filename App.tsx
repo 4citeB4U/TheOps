@@ -149,7 +149,7 @@ function App() {
   const isBackdropVisible = isSidebarOpen || isRightRailOpen;
 
   return (
-    <div className="min-h-screen w-screen flex flex-col font-sans antialiased">
+    <div className="h-screen w-screen flex flex-col font-sans antialiased overflow-hidden">
       <AppBackground />
       <BackgroundAmbiance />
       {showBackupReminder && <BackupReminder onDismiss={handleDismissReminder} onBackup={handleGoToBackup} />}

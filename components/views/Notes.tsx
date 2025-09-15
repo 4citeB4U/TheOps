@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
@@ -246,7 +244,7 @@ const Notes: React.FC = () => {
                 type="text"
                 value={activeNote.title || ''}
                 onChange={(e) => updateNote('title', e.target.value)}
-                className="w-full bg-transparent text-2xl font-bold text-white focus:outline-none"
+                className="w-full bg-transparent text-xl md:text-2xl font-bold text-white focus:outline-none"
                 placeholder="Note Title"
                 disabled={activeNote.type === 'conversation'}
               />
@@ -263,9 +261,9 @@ const Notes: React.FC = () => {
                   : <TextEditorView note={activeNote} onUpdate={updateNote} />
               }
             </div>
-            <div className="p-4 border-t border-border-color bg-gray-900/80 shrink-0">
+            <div className="p-4 border-t border-border-color bg-gray-900/80 shrink-0 ios-safe-area">
               <h3 className="text-sm font-semibold text-slate-400 mb-2">Actions</h3>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 md:gap-3">
                   <button onClick={handleCreateAssignment} className="flex items-center text-sm px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-md transition-colors">
                     <ActionIcon><CreateAssignmentIcon/></ActionIcon>Create Grind Item
                   </button>

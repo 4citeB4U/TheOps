@@ -73,6 +73,7 @@ const RightRail: React.FC = () => {
     'border-l',
     'border-slate-700/50',
     'shrink-0',
+    'ios-safe-area',
     isRightRailOpen ? 'right-rail-open' : ''
   ].join(' ');
 
@@ -80,7 +81,7 @@ const RightRail: React.FC = () => {
     <aside className={railClasses}>
       <PhaseIndicator phase={phase} transcript={transcript} />
       <div className="flex-grow overflow-hidden">
-        <div className="h-full overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
+        <div className="h-full overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 scrollable">
           <div className="flex flex-col space-y-4">
             {chatHistory.length > 0 ? chatHistory.map((msg, index) => (
               <ChatBubble key={index} message={msg} />
@@ -100,7 +101,7 @@ const RightRail: React.FC = () => {
           <input
             type="text"
             placeholder="Type your message..."
-            className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-primary-blue focus:ring-1 focus:ring-primary-blue/50"
+            className="flex-1 px-3 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-primary-blue focus:ring-1 focus:ring-primary-blue/50 text-base"
             onKeyPress={(e) => {
               if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                 // Handle sending message
@@ -108,7 +109,7 @@ const RightRail: React.FC = () => {
               }
             }}
           />
-          <button className="px-4 py-2 bg-primary-blue text-white rounded-lg hover:bg-primary-blue/90 transition-colors">
+          <button className="px-4 py-3 bg-primary-blue text-white rounded-lg hover:bg-primary-blue/90 active:bg-primary-blue/80 transition-colors min-h-[44px]">
             Send
           </button>
         </div>
@@ -116,7 +117,7 @@ const RightRail: React.FC = () => {
         <button 
             onClick={saveAndClearChat}
             disabled={chatHistory.length === 0}
-            className="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-sm bg-slate-700 hover:bg-slate-600 transition-colors disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-lg text-sm bg-slate-700 hover:bg-slate-600 active:bg-slate-500 transition-colors disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed min-h-[44px]"
         >
             <SaveIcon />
             Save & Clear Chat

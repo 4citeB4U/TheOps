@@ -267,8 +267,15 @@ class VoiceOrchestrator {
   private detectPlatform(): 'android' | 'ios' | 'windows' | 'macos' | 'linux' | 'unknown' {
     const userAgent = navigator.userAgent.toLowerCase();
     
-    if (/android/.test(userAgent)) return 'android';
-    if (/iphone|ipad|ipod/.test(userAgent)) return 'ios';
+    // Enhanced mobile detection
+    if (/android/.test(userAgent)) {
+      console.log('🤖 Android device detected');
+      return 'android';
+    }
+    if (/iphone|ipad|ipod/.test(userAgent)) {
+      console.log('🍎 iOS device detected');
+      return 'ios';
+    }
     if (/macintosh|mac os x/.test(userAgent)) return 'macos';
     if (/windows/.test(userAgent)) return 'windows';
     if (/linux/.test(userAgent)) return 'linux';
@@ -281,13 +288,28 @@ class VoiceOrchestrator {
     return platform === 'ios' || platform === 'macos';
   }
 
+  private isAndroidDevice(): boolean {
+    return this.detectPlatform() === 'android';
+  }
+
+  private isSamsungDevice(): boolean {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return /samsung/.test(userAgent) || /sm-/.test(userAgent) || /galaxy/.test(userAgent);
+  }
+
   private isSafari(): boolean {
     return this.detectBrowser() === 'safari';
+  }
+
+  private isSamsungInternet(): boolean {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return /samsungbrowser/.test(userAgent);
   }
 
   private detectBrowser(): 'chrome' | 'safari' | 'edge' | 'firefox' | 'unknown' {
     const userAgent = navigator.userAgent.toLowerCase();
     
+    if (/samsungbrowser/.test(userAgent)) return 'chrome'; // Samsung Internet is Chromium-based
     if (/edg/.test(userAgent)) return 'edge';
     if (/chrome/.test(userAgent) && !/edg/.test(userAgent)) return 'chrome';
     if (/safari/.test(userAgent) && !/chrome/.test(userAgent)) return 'safari';
@@ -341,18 +363,31 @@ class VoiceOrchestrator {
   private scoreAndroidVoice(voice: SpeechSynthesisVoice, browser: string): number {
     let score = 0;
     
-    // Android has excellent Google voices
+    // Enhanced Android voice scoring
     if (voice.name.includes('Google')) {
       score += 30;
       if (voice.name.includes('Natural')) score += 20;
       if (voice.name.includes('Enhanced')) score += 15;
+      if (voice.name.includes('WaveNet')) score += 25; // Google's premium voices
     }
     
-    // Samsung voices are also good
-    if (voice.name.includes('Samsung')) score += 25;
+    // Samsung voices are excellent on Samsung devices
+    if (voice.name.includes('Samsung')) {
+      score += this.isSamsungDevice() ? 35 : 25;
+      if (voice.name.includes('Neural')) score += 20;
+      if (voice.name.includes('Premium')) score += 15;
+    }
     
     // Microsoft voices on Android
     if (voice.name.includes('Microsoft')) score += 20;
+    
+    // Android system voices
+    if (voice.name.includes('Pico') || voice.name.includes('eSpeak')) score += 10;
+    
+    // Samsung Internet specific optimizations
+    if (this.isSamsungInternet() && voice.name.includes('Samsung')) {
+      score += 15;
+    }
     
     return score;
   }
@@ -476,6 +511,8 @@ class VoiceOrchestrator {
       case 'chrome':
         // Chrome has access to system voices and Google voices
         if (voice.name.includes('Google')) score += 25;
+        // Samsung Internet (Chromium-based) optimizations
+        if (this.isSamsungInternet() && voice.name.includes('Samsung')) score += 20;
         break;
       case 'safari':
         // Safari has superior access to system voices, especially on Apple devices
@@ -680,8 +717,8 @@ class VoiceOrchestrator {
   private initSpeechSynthesis() {
     if (!window.speechSynthesis) return;
     
-    // Safari-specific voice loading fix
-    if (this.isSafari()) {
+    // Platform-specific voice loading optimizations
+    if (this.isSafari() || this.isAppleDevice()) {
       console.log('🍎 Safari detected - using enhanced voice loading');
       
       // Multiple voice loading attempts for Safari
@@ -707,6 +744,23 @@ class VoiceOrchestrator {
         console.log('Safari: onvoiceschanged event fired');
         loadVoicesForSafari();
       };
+    } else if (this.isAndroidDevice()) {
+      console.log('🤖 Android detected - optimizing voice loading');
+      
+      const loadVoicesForAndroid = () => {
+        const voices = window.speechSynthesis.getVoices();
+        console.log('Android: Attempting to load voices, found:', voices.length);
+        
+        if (voices.length > 0) {
+          this._updatePreferredVoice();
+        } else {
+          // Android sometimes needs multiple attempts
+          setTimeout(loadVoicesForAndroid, 200);
+        }
+      };
+      
+      loadVoicesForAndroid();
+      window.speechSynthesis.onvoiceschanged = loadVoicesForAndroid;
     } else {
       // Standard voice loading for other browsers
       const setVoice = () => this._updatePreferredVoice();
@@ -955,8 +1009,18 @@ class VoiceOrchestrator {
     const platform = this.detectPlatform();
     const voiceQuality = this.preferredVoice ? this.scoreVoiceQuality(this.preferredVoice, platform, this.detectBrowser()) : 0;
     
-    // Adjust rate and pitch based on voice quality
-    if (voiceQuality > 70) {
+    // Platform-specific voice optimizations
+    if (platform === 'android' || this.isSamsungDevice()) {
+      // Android/Samsung optimizations
+      utterance.rate = 0.9;
+      utterance.pitch = 0.95;
+      utterance.volume = 1.0;
+    } else if (platform === 'ios') {
+      // iOS optimizations
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+    } else if (voiceQuality > 70) {
       // High-quality voice - use natural settings
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
@@ -975,7 +1039,7 @@ class VoiceOrchestrator {
     
     if (this.preferredVoice) {
         utterance.voice = this.preferredVoice;
-        console.log(`Speaking with system voice: ${this.preferredVoice.name} (Quality: ${voiceQuality})`);
+        console.log(`🔊 Speaking with: ${this.preferredVoice.name} (Platform: ${platform}, Quality: ${voiceQuality})`);
     } else {
         console.warn('No preferred voice set, using system default');
     }

@@ -3,6 +3,23 @@
   "short_name": "LΞX",
   "name": "LΞX Ops Center",
   "description": "LΞX is your ops center, locked in. A private, voice-first co-pilot for your academic life.",
+  "categories": ["productivity", "utilities", "education"],
+  "screenshots": [
+    {
+      "src": "./LEX.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "LΞX Ops Center Dashboard"
+    },
+    {
+      "src": "./LEX.svg", 
+      "sizes": "750x1334",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "LΞX Mobile Interface"
+    }
+  ],
   "icons": [
     {
       "src": "./LEX.svg",
@@ -12,9 +29,45 @@
     },
     {
       "src": "./LEX.svg",
+      "type": "image/svg+xml", 
+      "sizes": "48x48",
+      "purpose": "any"
+    },
+    {
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "72x72", 
+      "purpose": "any"
+    },
+    {
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "96x96",
+      "purpose": "any"
+    },
+    {
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "144x144",
+      "purpose": "any"
+    },
+    {
+      "src": "./LEX.svg",
       "type": "image/svg+xml",
       "sizes": "192x192",
       "purpose": "any maskable"
+    },
+    {
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "256x256",
+      "purpose": "any"
+    },
+    {
+      "src": "./LEX.svg",
+      "type": "image/svg+xml",
+      "sizes": "384x384",
+      "purpose": "any"
     },
     {
       "src": "./LEX.svg",
@@ -26,9 +79,40 @@
   "start_url": "/TheOps/",
   "scope": "/TheOps/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "theme_color": "#0f172a",
   "background_color": "#0a0f1a",
-  "orientation": "portrait-primary",
-  "categories": ["productivity", "utilities"],
-  "lang": "en"
+  "orientation": "any",
+  "lang": "en",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "shortcuts": [
+    {
+      "name": "Quick Note",
+      "short_name": "Note",
+      "description": "Create a quick note",
+      "url": "/TheOps/?action=quick-note",
+      "icons": [
+        {
+          "src": "./LEX.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Voice Command",
+      "short_name": "Voice",
+      "description": "Start voice interaction",
+      "url": "/TheOps/?action=voice",
+      "icons": [
+        {
+          "src": "./LEX.svg",
+          "sizes": "96x96", 
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
 }

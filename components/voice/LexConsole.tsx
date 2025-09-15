@@ -17,10 +17,22 @@ const LexConsole: React.FC = () => {
     const { phase } = useVoiceControl();
     const { setQuickActionModal } = useAppContext();
     const [isHovered, setIsHovered] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const [clickCount, setClickCount] = useState(0);
     const [bar1Active, setBar1Active] = useState(false);
     const [allBarsActive, setAllBarsActive] = useState(false);
     const clickTimeout = useRef<number | null>(null);
+
+    // Detect mobile device
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const handleMicClick = () => {
         setClickCount(prev => prev + 1);
@@ -55,7 +67,7 @@ const LexConsole: React.FC = () => {
     };
     
     const iconColorClass = phase === 'THINKING' ? 'text-primary-blue animate-pulse' : 'text-white';
-    const buttonClasses = `relative rounded-full flex items-center justify-center transition-all duration-300 ease-in-out w-20 h-20 shadow-2xl ${phaseClasses[phase]}`;
+    const buttonClasses = `relative rounded-full flex items-center justify-center transition-all duration-300 ease-in-out ${isMobile ? 'w-16 h-16' : 'w-20 h-20'} shadow-2xl ${phaseClasses[phase]} active:scale-95`;
 
     const councilActions = [
         { label: 'Quick Note', icon: <NoteIcon />, action: () => setQuickActionModal('note') },
@@ -79,14 +91,16 @@ const LexConsole: React.FC = () => {
     
     return (
         <div 
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] flex flex-col items-center"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            className={`fixed ${isMobile ? 'bottom-4' : 'bottom-8'} left-1/2 -translate-x-1/2 z-[1000] flex flex-col items-center ios-safe-area`}
+            onMouseEnter={() => !isMobile && setIsHovered(true)}
+            onMouseLeave={() => !isMobile && setIsHovered(false)}
+            onTouchStart={() => isMobile && setIsHovered(true)}
+            onTouchEnd={() => isMobile && setTimeout(() => setIsHovered(false), 3000)}
         >
             <AnimatePresence>
                 {isHovered && (
                     <motion.div 
-                        className="flex gap-3 mb-4"
+                        className={`flex gap-2 ${isMobile ? 'mb-2' : 'mb-4'} ${isMobile ? 'flex-wrap justify-center max-w-xs' : ''}`}
                         variants={councilContainerVariants}
                         initial="hidden"
                         animate="visible"
@@ -97,7 +111,7 @@ const LexConsole: React.FC = () => {
                                 key={item.label}
                                 onClick={item.action}
                                 variants={councilItemVariants}
-                                className="w-14 h-14 bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-full flex items-center justify-center text-white hover:bg-primary-blue transition-colors group"
+                                className={`${isMobile ? 'w-12 h-12' : 'w-14 h-14'} bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-full flex items-center justify-center text-white hover:bg-primary-blue active:bg-primary-blue/80 transition-colors group min-h-[44px] min-w-[44px]`}
                                 title={item.label}
                             >
                                {item.icon}
@@ -122,9 +136,9 @@ const LexConsole: React.FC = () => {
                 </button>
             </div>
             
-            <div className="w-24 h-2 flex justify-between items-center mt-3" aria-hidden="true">
+            <div className={`${isMobile ? 'w-16 h-1.5' : 'w-24 h-2'} flex justify-between items-center ${isMobile ? 'mt-2' : 'mt-3'}`} aria-hidden="true">
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className={`w-4 h-1.5 rounded-full bg-slate-700 transition-all duration-200 ${
+                    <div key={i} className={`${isMobile ? 'w-3 h-1' : 'w-4 h-1.5'} rounded-full bg-slate-700 transition-all duration-200 ${
                         (bar1Active && i===0) ? 'bg-primary-blue' : ''
                     } ${
                         allBarsActive ? 'bg-accent-fuchsia' : ''

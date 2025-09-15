@@ -49,12 +49,12 @@ const Sidebar: React.FC = () => {
         <li className="mb-1">
             <button
                 onClick={() => handleNav(view)}
-                className={`w-full flex items-center p-2.5 rounded-lg text-left text-base transition-all duration-200 group
+                className={`w-full flex items-center p-3 rounded-lg text-left text-base transition-all duration-200 group min-h-[44px] active:bg-slate-600
                 ${isActive ? 'bg-primary-blue text-white font-semibold' : 'text-text-dark hover:bg-bg-surface hover:text-text-light'}
                 ${isHighlighted ? 'ring-2 ring-offset-2 ring-offset-bg-main ring-accent-fuchsia' : ''}`}
             >
                 <NavIcon/>
-                <span className="group-hover:translate-x-1 transition-transform duration-200">{label}</span>
+                <span className="group-hover:translate-x-1 transition-transform duration-200 ml-1">{label}</span>
             </button>
         </li>
     );
@@ -71,16 +71,17 @@ const Sidebar: React.FC = () => {
     'border-r',
     'border-border-color/50',
     'shrink-0',
+    'ios-safe-area',
     isSidebarOpen ? 'sidebar-open' : ''
   ].join(' ');
 
   return (
     <aside className={sidebarClasses}>
-      <div className="flex items-center mb-8 pl-1">
+      <div className="flex items-center mb-6 pl-1">
         <div className="bg-primary-blue p-2 rounded-lg mr-3 text-white">
             <BookOpenIcon />
         </div>
-        <h1 className="text-xl font-bold text-white">LΞX Ops Center</h1>
+        <h1 className="text-lg font-bold text-white">LΞX Ops Center</h1>
       </div>
       
       <div className="flex-grow flex flex-col justify-between overflow-y-auto">
@@ -91,7 +92,7 @@ const Sidebar: React.FC = () => {
         </nav>
 
         <div>
-           <div className="my-4 px-1 space-y-3">
+           <div className="my-3 px-1 space-y-2">
               <LexAvatar />
               <LexWaveEmitter />
            </div>
@@ -102,7 +103,7 @@ const Sidebar: React.FC = () => {
            </nav>
            
            {/* Reset Onboarding Button */}
-           <div className="mt-4 px-1">
+           <div className="mt-3 px-1">
              <button
                onClick={async () => {
                  if (confirm('Reset onboarding? This will clear your profile and show the onboarding flow again.')) {
@@ -115,7 +116,7 @@ const Sidebar: React.FC = () => {
                    }
                  }
                }}
-               className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-red-700/50 transition-colors group border border-red-700/30 text-red-300 hover:text-red-200"
+               className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-red-700/50 active:bg-red-700/60 transition-colors group border border-red-700/30 text-red-300 hover:text-red-200 min-h-[44px]"
              >
                <svg className="w-5 h-5 text-red-400 group-hover:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -126,7 +127,7 @@ const Sidebar: React.FC = () => {
         </div>
       </div>
       
-      <div className="mt-auto px-4 pb-2 pt-2 shrink-0">
+      <div className="mt-auto px-2 pb-2 pt-2 shrink-0">
         <UserDisplay userProfile={userProfile} greetingSettings={greetingSettings} />
       </div>
     </aside>

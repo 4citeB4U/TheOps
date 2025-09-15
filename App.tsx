@@ -35,8 +35,43 @@ function App() {
 
   const [isReadyForConversation, setIsReadyForConversation] = useState(false);
   const [showBackupReminder, setShowBackupReminder] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const prevView = useRef(currentView);
   const touchStartRef = useRef<number | null>(null);
+
+  // Enhanced mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = window.innerWidth <= 768 || 
+        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Handle mobile keyboard
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleResize = () => {
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const windowHeight = window.innerHeight;
+      const keyboardHeight = windowHeight - viewportHeight;
+      setKeyboardHeight(keyboardHeight > 150 ? keyboardHeight : 0);
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    } else {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, [isMobile]);
 
   // Apply layout and theme settings from user profile
   useLayoutEffect(() => {
@@ -95,6 +130,8 @@ function App() {
   
   // Swipe gestures for mobile
   useEffect(() => {
+      if (!isMobile) return;
+      
       const handleTouchStart = (e: globalThis.TouchEvent) => {
           if (e.touches.length === 1) {
               touchStartRef.current = e.touches[0].clientX;
@@ -128,7 +165,7 @@ function App() {
           window.removeEventListener('touchstart', handleTouchStart);
           window.removeEventListener('touchend', handleTouchEnd);
       };
-  }, [isSidebarOpen, isRightRailOpen, toggleSidebar, toggleRightRail]);
+  }, [isSidebarOpen, isRightRailOpen, toggleSidebar, toggleRightRail, isMobile]);
   
   if (isOnboarding) {
     return <OnboardingFlow />;
@@ -149,13 +186,18 @@ function App() {
   const isBackdropVisible = isSidebarOpen || isRightRailOpen;
 
   return (
-    <div className="h-screen w-screen flex flex-col font-sans antialiased overflow-hidden">
+    <div 
+      className="h-screen w-screen flex flex-col font-sans antialiased overflow-hidden ios-safe-area"
+      style={{ 
+        height: isMobile && keyboardHeight > 0 ? `calc(100vh - ${keyboardHeight}px)` : '100vh' 
+      }}
+    >
       <AppBackground />
       <BackgroundAmbiance />
       {showBackupReminder && <BackupReminder onDismiss={handleDismissReminder} onBackup={handleGoToBackup} />}
-      <MobileHeader onMenuClick={toggleSidebar} onChatClick={toggleRightRail} />
+      {isMobile && <MobileHeader onMenuClick={toggleSidebar} onChatClick={toggleRightRail} />}
 
-      <div className={`main-content-area flex-grow ${layoutClass} overflow-hidden`}>
+      <div className={`main-content-area flex-grow ${layoutClass} overflow-hidden ${isMobile ? 'mobile-layout' : ''}`}>
         <Sidebar />
         <Workspace />
         <RightRail />
@@ -177,6 +219,16 @@ function App() {
             .layout-main-sidebar-chat > .sidebar { order: 2; }
             .layout-main-sidebar-chat > .workspace { order: 1; }
             .layout-main-sidebar-chat > .right-rail { order: 3; }
+        }
+        
+        @media (max-width: 768px) {
+          .mobile-layout {
+            padding-top: ${isMobile ? '60px' : '0px'};
+          }
+          
+          .keyboard-adjust {
+            transform: translateY(${keyboardHeight > 0 ? `-${keyboardHeight / 2}px` : '0px'});
+          }
         }
       `}</style>
     </div>
